@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="79">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df name="Sched_Test_App" root=".">
+      <df name="bin">
+        <df name="simple_taskset">
+        </df>
+      </df>
+      <df name="img">
+      </df>
+      <df name="slope">
+        <in>slope_test_app.c</in>
+      </df>
+      <df name="src">
+        <in>main.cpp</in>
+        <in>moc_rt_test.cpp</in>
+        <in>rt_sched_list.h</in>
+        <in>rt_task.cpp</in>
+        <in>rt_task.h</in>
+        <in>rt_test.cpp</in>
+        <in>rt_test.h</in>
+        <in>test_app_gui.h</in>
+      </df>
+      <df name="templates">
+      </df>
+    </df>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>.</itemPath>
+      <itemPath>Makefile</itemPath>
+      <itemPath>sched_test_app.pro</itemPath>
+    </logicalFolder>
+    <itemPath>/e/lectures/real-time/PhD-work/stm/Practical/test_rstm_hlp/main.cpp</itemPath>
+    <itemPath>/e/lectures/real-time/PhD-work/stm/Practical/Gen_Tasks/main.cpp</itemPath>
+  </logicalFolder>
+  <sourceFolderFilter>^(nbproject)$</sourceFolderFilter>
+  <sourceRootList>
+    <Elem>.</Elem>
+  </sourceRootList>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <remote-sources-mode>LOCAL_SOURCES</remote-sources-mode>
+        <compilerSet>default</compilerSet>
+      </toolsSet>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>.</buildCommandWorkingDir>
+          <buildCommand>${MAKE} -f Makefile</buildCommand>
+          <cleanCommand>${MAKE} -f Makefile clean</cleanCommand>
+          <executablePath>bin/sched_test_app</executablePath>
+          <ccTool>
+            <incDir>
+              <pElem>/usr/include/qt4</pElem>
+              <pElem>/usr/include/qt4/QtGui</pElem>
+              <pElem>src</pElem>
+              <pElem>/usr/include/qt4/QtCore</pElem>
+              <pElem>/usr/share/qt4/mkspecs/linux-g++</pElem>
+            </incDir>
+            <preprocessorList>
+              <Elem>QT_CORE_LIB</Elem>
+              <Elem>QT_GUI_LIB</Elem>
+              <Elem>QT_SHARED</Elem>
+              <Elem>_REENTRANT</Elem>
+            </preprocessorList>
+          </ccTool>
+        </makeTool>
+      </makefileType>
+      <item path="slope/slope_test_app.c" ex="true" tool="0" flavor="0">
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>

@@ -1,0 +1,6 @@
+#the number of locks
+L	0
+#	CPUs	Period (us)	Usage (us)	Utility		Locks	HUA Utility
+T	all	500000		150000		17
+T	all	1000000		227000		4
+T	all	1500000		410000		24

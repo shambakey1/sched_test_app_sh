@@ -1,0 +1,13 @@
+#the number of locks
+L	0
+#	CPUs	Period (us)	Usage (us)	Utility		Locks
+T	all	400000		75241		36
+T	all	750000		69762		13
+T	all	1200000		267122		67
+T	all	1500000		69863		9
+T	all	2400000		152014		213
+T	all	4000000		286301		57
+T	all	7500000		493150		91
+T	all	10000000	794520		495
+T	all	15000000	1212328		875
+T	all	20000000	1775342		186

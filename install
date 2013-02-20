@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# This script compiles the slope for the system and installs the sched_test_app
+# in the /usr/local/chronos folder.
+#
+# (c) Real-time Systems Lab, Virginia Tech
+
+INSTALL_DIR=/usr/local/chronos
+SLOPE_DIR=./slope
+
+if [ $(/usr/bin/id -u) -ne 0 ]; then
+	echo "run this script with sudo"
+	exit 2
+fi
+
+if [ ! -f "./bin/sched_test_app" ]; then
+	echo "You have not complied the sched_test_app."
+	echo "Run qmake and then make before starting install"
+	exit 2
+fi
+
+if [ -d ${INSTALL_DIR} ]; then
+	echo "Libchronos already installed..."
+else
+	echo "You need to install libchronos... do it with make followed by sudo make install"
+	exit 2
+fi
+
+if [ -f "${INSTALL_DIR}/slope.conf" ]; then
+	echo "System slope already calculated..."
+	cat /usr/local/chronos/slope.conf	
+else
+	echo "Finding the system slope..."
+	g++ ${SLOPE_DIR}/slope_test_app.c -o slope-test-app -O0 -lrt -lpthread -lchronos
+	./slope-test-app
+	rm slope-test-app
+fi
+
+echo "Installing the sched_test_app in ${INSTALL_DIR}"
+cp bin/sched_test_app /usr/local/chronos/sched_test_app
+cp img/chronos.png /usr/local/chronos/chronos.png
+
+if [ ! -f "/usr/local/bin/sched_test_app" ]; then
+	ln -s /usr/local/chronos/sched_test_app /usr/local/bin/sched_test_app
+fi
+
+echo "Done..."

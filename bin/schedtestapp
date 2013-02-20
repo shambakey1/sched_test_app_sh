@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ $(/usr/bin/id -u) -ne 0 ]; then
+	echo "Run this script with sudo"
+	exit 2
+fi
+
+modprobe fifo_ra
+modprobe rma
+modprobe hvdf
+modprobe gfifo
+modprobe grma
+modprobe ggua
+modprobe gedf
+
+./sched_test_app

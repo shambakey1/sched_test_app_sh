@@ -1,0 +1,156 @@
+Readme for Sched_Test_App
+Written by Matthew Dellinger <mdelling@vt.edu>, January 21, 2010
+
+Copyright 2008-2010 by Matthew Dellinger.
+Redistribution of this file is permitted under the GNU Public License.
+
+Table of Contents
+~~~~~~~~~~~~~~~~~
+1.    General Information
+2.    Known Bugs
+3.    Interface Options
+3.1.  Scheduling Algorithm
+3.2.  Locking
+3.3.  Run Properties
+3.4.  Taskset
+4.    Setup
+5.    Coding Style
+6.    Update History
+
+
+1. General Information
+~~~~~~~~~~~~~~~~~~~~~
+Sched_Test_App is a scheduling algorithm test application for use with the 
+vt_rt_sched scheduling framework. It generates a series of periodic threads
+which are given real-time linux priorities and records statistics about each
+thread.
+
+2. Known Bugs
+~~~~~~~~~~~~~~~~~~~~~
+None
+
+3. Interface Options
+~~~~~~~~~~~~~~~~~~~~~
+The interface options are divided up into several groups.
+
+The main panel displays all output from the program, including error messages. It
+can be cleared with the clear button.
+
+The panel on the left contains all the output formatting controls.
+
+The panels on the right contain all the necessary setting for a run, which can be
+started using the run button in the lower right hand corner.
+
+The interface via the console offers all the same options, so a separate discussion
+of that is not included. Running the compiled binary with any arguments will
+print a basic help file to the console.
+
+3.1 Scheduling Algorithm
+~~~~~~~~~~~~~~~~~~~~~
+This panel contains the interface for selecting a scheduling algorithm. The
+algorithm is selectable via the top combobox.
+
+The options below the combobox are flags sent to the kernel scheduler which 
+affect the behaviour of a given algorithm. If you are using this application in 
+ECE 4550 or ECE 5550, you do not need to worry about these.
+
+Abort tasks on idle will run aborted tasks only when there are no other real-time
+tasks to be run. This incurs a higher memory and scheduling overhead, but decreases
+the amount of time spent executing non-utility accruing tasks and minimizes
+context switches.
+
+Use HUA handlers will create HUA abort handlers for any task that has an abort
+handler utility defined in the task set description file. The handler's deadline
+is always infinite. If no handler utility is present for a task, it will be aborted
+as normal by the kernel.
+
+Use PI enables priority inheritance if the algorithm supports it. This option does
+nothing if the algorithm does not support PI or if the algorithm has another
+resource management scheme (such as DASA).
+
+Deadlock prevention prevents deadlocks from occuring in resource algorithms like 
+PI. This generally incurs a higher scheduling overhead. This does nothing if the
+algorithm already has a deadlock prevention mechanism (like DASA).
+
+3.2 Locking
+~~~~~~~~~~~~~~~~~~~~~
+Resources will only be used if locking is enabled. When it is enabled, all 
+locks listed in the task set descriptor file will be locked, and the task will
+then burn the processor for the critical section length. All locks will then
+be released, and the processor will be burned for the remainder of its execution
+time.
+
+3.2 Run Properties
+~~~~~~~~~~~~~~~~~~~~~
+Execution time specifies the length of the run in seconds. This should always be
+a multiple of the task set period.
+
+CPU usage specifies the amount of processor usage to use for the run. Modifying
+this changes the execution time of the task.
+
+End usage and Iteration: When doing a batch run, these specify the end processor
+usage and the step size.
+
+Excel or Gnuplot output format the output appropriately for input to those
+programs.
+
+Verbose output lists every action of every task, rather than just the final
+results. This is currently unstable due to the lack of thread-safety in streams.
+
+Log to file will log the output to an automatically named file at the end of
+every run. When used in conjunction with a batch run, this will output between
+every iteration.
+
+3.3 Taskset
+~~~~~~~~~~~~~~~~~~~~~
+The taskset must be loaded from a file before any runs can be made. The number
+of tasks, the processor usage of the taskset (i.e. the actual processor usage
+if processor usage is specified as 100), the task set's period, and the number
+of locks are all displayed. A sample taskset with five tasks and five locks is
+shown below.
+
+#the number of locks
+L	5
+#The tasks
+#	Period (us)	Usage (us)	Utility		Locks	HUA Utility
+T	500000		150000		17		2,3	2
+T	1000000		230000		4		1,4	2
+T	1500000		410000		24		0,2	2
+T	3000000		300000		39		4,0	2
+T	5000000		500000		18		1,3	2
+
+4. Setup
+~~~~~~~~~~~~~~~~~~~~~
+To compile Sched_Test_App, you will need the Qt libraries installed. 
+On Ubuntu this can be done with
+
+sudo apt-get install qt4-dev-tools
+sudo apt-get install qt4-qmake
+
+You can then open the included kdevelop3 project and build the project, or build
+with qmake followed by make.
+
+If you compile it another way, note that the -O2 flag will result in the burn
+loop being optimized out.
+
+To install, run the included install script.
+
+You will have to sudo to run, as the call to set the scheduler requires it. Also,
+if you debug the application in kdevelop, you will notice that the results are
+incorrect, even if you sudo kdevelop.
+
+6. Code Formatting
+~~~~~~~~~~~~~~~~~~~~~
+All code in this application follows Google's C++ Style Guide
+http://google-styleguide.googlecode.com/svn/trunk/cppstyleguide.xml
+
+While it is by no means perfect, it provides a reasonable standard. A good
+discussion of its merits and flaws can be found here.
+
+http://groups.google.com/group/comp.lang.c++.moderated/browse_thread/thread/d7b0a5c663467471/ec4c733dd30b34e3
+
+6. Update History
+~~~~~~~~~~~~~~~~~~~~~
+Written by Matthew Dellinger <mdelling@vt.edu>, January 21, 2010
+Updated by Matthew Dellinger <mdelling@vt.edu>, May 18, 2010
+Updated by Matthew Dellinger <mdelling@vt.edu>, July 22, 2010
