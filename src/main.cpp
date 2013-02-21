@@ -188,14 +188,14 @@ int main(int argc, char **argv) {
                 dataset_id=atoi(optarg);
             }
             else if(!strcmp(long_options[option_index].name,"sync")){
-                sync=optarg;
-                sync=upperStr(sync);
-                if(!check_sync(sync)){
+                sync_alg=optarg;
+                sync_alg=upperStr(sync_alg);
+                if(!check_sync(sync_alg)){
                 	cout<<"Not a valid synchronization technique"<<endl;
                 	cout<<"Please enter one of these: ECM, RCM, LCM, PNF, FBLT, OMLP, RNLP, LOCK_FREE"<<endl;
                 	exit(0);
                 }
-                if(isSTM(sync)){
+                if(isSTM(sync_alg)){
                 	// In case of stm synchronization
                 	stm::init("Polka","invis-eager",false);
                 }
@@ -456,7 +456,7 @@ int main(int argc, char **argv) {
 		return 0;
 	}
         /*************************** SH-START ********************************/
-	if(isSTM(sync)){
+	if(isSTM(sync_alg)){
 		stm::shutdown(0);
 	}
         /*************************** SH-END ********************************/
