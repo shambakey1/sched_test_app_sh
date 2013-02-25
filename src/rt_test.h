@@ -260,7 +260,7 @@ class RtTester : public QObject
             }
             */
             /***************** SH_SQL_ST ***************/
-            setResults(dataset_id,total_result);
+            setResults(DATASET_ID,total_result,sync_alg);
             /***************** SH_SQL_END ***************/
         }
 

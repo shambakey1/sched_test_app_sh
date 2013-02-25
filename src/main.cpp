@@ -186,6 +186,7 @@ int main(int argc, char **argv) {
             }
             else if(!strcmp(long_options[option_index].name,"dataset_id")){
                 dataset_id=atoi(optarg);
+		DATASET_ID=dataset_id;
             }
             else if(!strcmp(long_options[option_index].name,"sync")){
                 sync_alg=optarg;
@@ -442,16 +443,14 @@ int main(int argc, char **argv) {
 			tester->setParamters(cpu_usage, end_usage, interval, run_time, batch_flag);
 			tester->setLocking(lock_flag, nested_flag, lock_len);
 			tester->setOutputFormat(verbose_flag, log_flag, excel_flag, gnu_flag);
-                        /**************** SH_SQL_ST *****************/
-			//tester->setMain(main_cpu);
-                        /**************** SH_SQL_END *****************/
+			tester->setMain(main_cpu);
+			tester->setWrPer(wr_per);       //set write percentage
 			tester->startRun();
 		} else {
                     /********************* SH-START-3 ***********************/
 		    cout<<lcm<<endl;
                     /********************* SH-END-3 ***********************/
 		}
-                tester->setWrPer(wr_per);       //set write percentage
                 
 		return 0;
 	}

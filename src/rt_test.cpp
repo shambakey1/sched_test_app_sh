@@ -184,9 +184,6 @@ int RtTester::fileSelected(string data_set_host,string data_set,string user_name
     double utilization = 0;
     unsigned long lcm = 0;
     
-    /* Modifiy number of processors to utilization cap */
-    this->setMain(getUtilCap(data_set_host,data_set,user_name,user_pass,dataset_id));
-    
     /* Extract tasks' information from dataset */
     vector<struct rt_task> tasks_info;     //Tasks of a dataset with their portions
     tasks_info=readTaskSet(data_set_host,data_set,user_name,user_pass,dataset_id);
@@ -242,6 +239,9 @@ int RtTester::fileSelected(string data_set_host,string data_set,string user_name
             /********************* MIN_OBJ_END **********************/
             cout<<"***************************************"<<endl;
             t->printTaskPortions();
+	    cout<<"number of cpus:"<<t->cpus()<<endl;
+	    cout<<"main cpu:"<<main_cpu()<<endl;
+	    cout<<"main cpu mask:"<<MainCpuMask()<<endl;
             cout<<"***************************************"<<endl;
         }
         /******************* SH-END-3 *************************/

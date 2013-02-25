@@ -103,13 +103,15 @@ void *Task::task(void *value) {
 	sched_setaffinity(0, sizeof(long), (cpu_set_t *) &cpus);
         
         /******************************* SH-START ***********************************/
-        stm::init(cm,"vis-eager",false);
-        (me->task_result)->at(0).push_back((unsigned long long)(me->thread_id()));
+	if(isSTM(sync_alg)){
+	        stm::init(sync_alg,"vis-eager",false);
+	}
         /******************************* SH-END ***********************************/
 
 	//while(accrue) {
 	//	accrue = me->AddRelease();
         /*********************** SH-START ***************************/
+	int inst_id=0;	//instance(job) id of current task
         while((accrue = me->AddRelease())){
         /*********************** SH-END ***************************/
 		me->UpdateDeadline();
@@ -177,6 +179,14 @@ void *Task::task(void *value) {
                     //pnf_args=me->period_ts();
                     cm_args.time_param=me->period_ts();
                 }
+		cm_args.gen_eta=0;
+		cm_args.task_run_prio=TASK_RUN_PRIO;
+		cm_args.task_util=me->utility();
+		cm_args.task_deadline=me->deadline();
+		cm_args.task_period=me->period_ts();
+		cm_args.task_unlocked=me->unlocked_usage();
+		cm_args.task_locked=me->locked_usage();
+		cm_args.task_end_prio=TASK_CLEANUP_PRIO;
                 /************************ pnf END ******************************/
 		/************************* Debug 1 start *********************/
 		//struct sched_param param_t;
@@ -194,19 +204,35 @@ void *Task::task(void *value) {
                         /************************** pnf-END ****************************/
                         num_loops=me->vec[3][0][i]/final_stm_slope;
                         //coun_obj->at((int)(me->vec[2][i])).pnf_multi_reset(num_loops,(void*)(pnf_args);
-                        (coun_obj->at(0)).multi_reset(num_loops,(void*)(&cm_args),me->vec[2][i],(me->thread_id()),me->wr_per);
+			if(!sync_alg.compare("LCM")){
+				(coun_obj->at(0)).lcm_multi_reset(num_loops,PSY,me->vec[3][0][i],(void*)(&cm_args),me->vec[2][i],(me->thread_id()),me->wr_per);
+			}
+			else if(!sync_alg.compare("ECM") || !sync_alg.compare("RCM")){
+	                        (coun_obj->at(0)).multi_reset(num_loops,(void*)(&cm_args),me->vec[2][i],(me->thread_id()),me->wr_per);
+			}
+			else if(!sync_alg.compare("PNF")){
+				me->EndRtSegment();
+				(coun_obj->at(0)).multi_reset(num_loops,(void*)(&cm_args),me->vec[2][i],(me->thread_id()),me->wr_per);
+				me->BeginRtSegment();	
+			}
+			else if(!sync_alg.compare("FBLT")){
+				cm_args.gen_eta=me->vec[4][0][i]==0?0:(rand()%((int)(me->vec[4][0][i])))/20;
+                        	(coun_obj->at(0)).lcm_multi_reset(num_loops,PSY,me->vec[3][0][i],(void*)(&cm_args),me->vec[2][i],(me->thread_id()),me->wr_per);
+			}
                         /************************** pnf-START ****************************/
                         /************************** pnf-END ****************************/
                     }
                 }
                 /************************* SH-END *******************************/
-
 		clock_gettime(CLOCK_REALTIME, &end_time);
                 /************************* SH-START *******************************/
+//		(me->task_result)->at(0).push_back((unsigned long long)(me->thread_id()));
+		(me->task_result)->at(0).push_back((unsigned long long)inst_id);
                 (me->task_result)->at(4).push_back((unsigned long long)(subtract_ts_mo(me->period_ts(),me->deadline())));
                 (me->task_result)->at(5).push_back(((unsigned long long)(me->deadline()->tv_sec))*BILLION+(me->deadline()->tv_nsec));
                 (me->task_result)->at(6).push_back(((unsigned long long)(end_time.tv_sec))*BILLION+(end_time.tv_nsec));
                 (me->task_result)->at(7).push_back(((unsigned long long)(end_time.tv_sec))*BILLION+(end_time.tv_nsec)-(subtract_ts_mo(me->period_ts(), me->deadline())));
+		inst_id++;
 //		(me->log_result)->push_back(stm::printLog());
 //		stm::newInst();
                 /************************* SH-END *******************************/
@@ -225,7 +251,6 @@ void *Task::task(void *value) {
                 (me->task_result)->at(2).push_back(tmp_st_vec[1]);
                 (me->task_result)->at(3).push_back(tmp_st_vec[2]);
                 /******************* SH_SQL_END ********************/
-
 		if(tester->chronos())
 			me->EndRtSegment();
 
