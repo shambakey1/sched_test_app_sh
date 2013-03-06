@@ -29,21 +29,18 @@
 #include <sys/mman.h>
 #include "test_app_gui.h"
 #include "rt_test.h"
-/******************* SH_SQL_ST *******************/
 #include <getopt.h>
 
 #define DBHOST "localhost"
 #define DB "test"
 #define DBUSER "root"
 #define DBPASS "hagerabd"
-/******************* SH_SQL_END *******************/
 
 using namespace std;
 
 void set_version(Ui_MainWindow *ui) {
 	ui->versionLabel->setText(VERSION);
 }
-
 
 void print_usage() {
 	cout	<< endl << "Console testing application for ChronOS"			<< endl
@@ -69,7 +66,6 @@ void print_usage() {
 		<< "  -x            Enable log in Excel format"				<< endl
 		<< "  -g            Enable log in Gnuplot format"			<< endl
 		<< "  -z            Don't run the test, just print the hyper-period"	<< endl
-		/*************************** SH-START-2 ********************************/
 		<< "  -j s_max per        Provide the maximum atomic section length percentage relative to WCET of each task, 0 for none"	<< endl
 		<< "  -k s_min per        Provide the minimum atomic section length percentage relative to WCET of each task, 100 for the whole"	<< endl
 		<< "  -t total per        Provide the total length percentage of all atomic sections relative to WCET of each task, 0 for none"	<< endl
@@ -78,7 +74,6 @@ void print_usage() {
 		<< "                      If 0, or not provided, then random number of objects is assumed" << endl
 		<< "  -w num_tasks        Provides number of tasks for current experiment" << endl
 		<< "  -q wr_per           Percentage of write operations" << endl
-		/*************************** SH-END-2 ********************************/
 		<< endl
 		<< "Examples:"							 	<< endl
 		<< "    $sched_test_app -s RMA -f taskset/5t_nl -c 100 -r 20"		<< endl
@@ -111,18 +106,13 @@ int main(int argc, char **argv) {
 	/* Definitions for console mode */
 	QString *file, *sched;
 	char *file_name = NULL, *sched_name = NULL;
-	/************************* SH-START-2 **************************/
 	int c;
-        //char optstring[]= "c:e:f:i:l:r:s:j:k:t:u:y:w:q:abdghmnopvxz";
-        double s_max, s_min, t_per;
-        int obj_no;
-        /************************* SH-END-2 **************************/
-        /******************** MIN_OBJ ***********************/
-        double obj_min=0;       //Specifies minimum number of objects per transaction
-                                //If 0, then random number of objects per transaction is assumed (DEFAULT)
-        int num_tasks=0;        //Total number of tasks per current experiment
-        double wr_per=1;        //percentage of write operations. (1-wr_per) is percentage of read operations
-        /******************** MIN_OBJ ***********************/
+    double s_max, s_min, t_per;
+    int obj_no;
+    double obj_min=0;       //Specifies minimum number of objects per transaction
+                            //If 0, then random number of objects per transaction is assumed (DEFAULT)
+    int num_tasks=0;        //Total number of tasks per current experiment
+    double wr_per=1;        //percentage of write operations. (1-wr_per) is percentage of read operations
 	bool lock_flag = false, verbose_flag = false, log_flag = false,
 	     no_run = false, excel_flag = false, abort_flag = false,
 	     hua_flag = false, deadlock_flag = false, pi_flag = false, 
@@ -130,17 +120,6 @@ int main(int argc, char **argv) {
 	     gnu_flag = false, nested_flag = false;
 	int run_time = 0, cpu_usage = 0, lock_len = 0, end_usage = 0, interval = 0, main_cpu = 0;
 
-	// Minimum 8 have to be there.
-        /*
-	if (argc < 11 && argc != 1)
-	{
-		cout << endl
-		     << "Error:: Provide the scheduler, cpu usage,  run time and filename for taskset "
-		     << endl;
-		print_usage();
-		return 0;
-	}
-        */
 	if(argc > 8)
 		cmd = true;
 
@@ -166,9 +145,6 @@ int main(int argc, char **argv) {
               };
             int option_index = 0;
             c = getopt_long (argc, argv,"c:e:f:i:l:r:s:j:k:t:u:y:w:q:abdghmnopvxz",long_options, &option_index);
-			/***************** DEBUG 1 START *********************/
-			//cout<<"c is "<<c<<", opt_indx: "<<option_index<<", val: "<<optarg<<", argc: "<<argc<<endl;
-			/************** DEBUG 1 END *******************************/
             if (c == -1){
                 break;
             }
@@ -186,7 +162,7 @@ int main(int argc, char **argv) {
             }
             else if(!strcmp(long_options[option_index].name,"dataset_id")){
                 dataset_id=atoi(optarg);
-		DATASET_ID=dataset_id;
+				DATASET_ID=dataset_id;
             }
             else if(!strcmp(long_options[option_index].name,"sync")){
                 sync_alg=optarg;
@@ -200,6 +176,12 @@ int main(int argc, char **argv) {
                 	// In case of stm synchronization
                 	stm::init("Polka","invis-eager",false);
                 }
+                else if(!sync_alg.compare("OMLP")){
+                	lock_pro_id=OMLP_PRO;
+                }
+                else if(!sync_alg.compare("RNLP")){
+                	lock_pro_id=RNLP_PRO;
+                }
             }
             else if(!strcmp(long_options[option_index].name,"checkpoint")){
 				string cp_val=optarg;
@@ -209,6 +191,7 @@ int main(int argc, char **argv) {
 				}
 				else{
 					cout<<"Please choose 'yes' or 'y' if you want checkpointing enabled"<<endl;
+					exit(0);
 				}
 			}
 
@@ -294,7 +277,6 @@ int main(int argc, char **argv) {
                     no_run = true;
                     break;
 
-            /**************************** SH-START-2 *****************************/
             case 'j':
                 //set the maximum length percentage for any atomic section in each task
                 s_max=atof(optarg);
@@ -318,8 +300,6 @@ int main(int argc, char **argv) {
             case 'q':
                 wr_per=atof(optarg);
                 break;
-            /**************************** SH-END-2 *****************************/
-            /********************* MIN_OBJ_START **********************/
             case 'y':
                 //set the number of shared objects
                 obj_min=atof(optarg);
@@ -329,8 +309,6 @@ int main(int argc, char **argv) {
                 //set number of tasks in current experiment
                 num_tasks=atoi(optarg);
                 break;
-            /********************* MIN_OBJ_END **********************/
-
             case '?' :
                    if (optopt)  printf("bad short opt '%c'\n", optopt);
 	           else  printf("bad long opt \"%s\"\n", optarg);
@@ -340,8 +318,6 @@ int main(int argc, char **argv) {
                     return 0;
             }
 	}
-        /************************ SH_SQL_END **************************/
-
 	/* If any character was used without the '-' handle them here */
 	for (int index = optind; index < argc; index++)
 	{
@@ -394,9 +370,7 @@ int main(int argc, char **argv) {
 		//Configure the tester
 		RtTester *tester = new RtTester(ui, fd);
 		tester->set_slope(exec_slope);
-                /************************* SH-START *******************************/
-                tester->setStmSlope();
-                /************************* SH-END *******************************/
+        tester->setStmSlope();
 		QObject::connect(fd, SIGNAL(fileSelected(const QString&)), tester, SLOT(fileSelected(const QString&)));
 		QObject::connect(ui->batchBox, SIGNAL(toggled(bool)), tester, SLOT(changeText(bool)));
 		QObject::connect(ui->lockingCBox, SIGNAL(toggled(bool)), tester, SLOT(onLockingDisable(bool)));
@@ -406,9 +380,7 @@ int main(int argc, char **argv) {
 	} else {
 		RtTester *tester = new RtTester();
 		tester->set_slope(exec_slope);
-                /************************* SH-START *******************************/
-                tester->setStmSlope();
-                /*********************** SH-START-2 ***************************/
+        tester->setStmSlope();
                 if(s_max!=0){
                     tester->setMaxSecPer(s_max);
                 }
@@ -421,22 +393,11 @@ int main(int argc, char **argv) {
                 if(obj_no!=0){
                     tester->setNumObj(obj_no);
                 }	
-                /*********************** SH-END-2 ***************************/
-                /************************* SH-END *******************************/
-		/*********************** SH-START-3 **************************/
-                /********************* MIN_OBJ_START ****************************/
-                //if(obj_min>0){
-                    tester->setMinObj(obj_min);
-                //}
+                tester->setMinObj(obj_min);
                 if(num_tasks>0){
                     tester->setNumTasks(num_tasks);
                 }
-                /********************* MIN_OBJ_END ****************************/
-		//int lcm = tester->fileSelected(*file,no_run);
-                /***************** SH_SQL_ST *********************/
                 int lcm=tester->fileSelected(dataset_host,dataset,dataset_user,dataset_pass,dataset_id,no_run);
-                /***************** SH_SQL_END *********************/
-                /*********************** SH-END-3 **************************/
 
 		if (no_run == false) {
 			tester->setSchedAlgo(*sched, abort_flag, deadlock_flag, pi_flag, hua_flag);
@@ -447,18 +408,12 @@ int main(int argc, char **argv) {
 			tester->setWrPer(wr_per);       //set write percentage
 			tester->startRun();
 		} else {
-                    /********************* SH-START-3 ***********************/
 		    cout<<lcm<<endl;
-                    /********************* SH-END-3 ***********************/
 		}
                 
 		return 0;
 	}
-        /*************************** SH-START ********************************/
 	if(isSTM(sync_alg)){
 		stm::shutdown(0);
 	}
-        /*************************** SH-END ********************************/
-
 }
-

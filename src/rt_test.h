@@ -50,35 +50,23 @@
 #include "rt_sched_list.h"
 #include "rt_task.h"
 #include "test_app_gui.h"
-
-
-/********************* SH-START **************************/
 #include <stm_chronos.hpp>
 #include <cmath>
-/********************* SH-END **************************/
-/****************** SH_SQL_ST *********************/
 #include <Util.hpp>
-/****************** SH_SQL_END *********************/
 
 
 /* Priorities */
-//#define MAIN_PRIO			51
 #define TASK_CREATE_PRIO		45
 #define TASK_CLEANUP_PRIO		44
 #define TASK_RUN_PRIO			40
-/************************* PNF-START *****************************/
-#define cm "ECM"
-/************************* PNF-END *******************************/
-/************************** SH-START *****************************/
 
 extern double PSY;
-//extern string cm;
-
 struct lcm_args{
     unsigned long length;    //execution time of the atomic section
     double psy;                 //threshold value used to calculate alpha
-    };
-/************************** SH-END *****************************/
+};
+extern vector<ResLock> totalreslock;	//set of resources with corresponding lock for each resource
+extern int lock_pro_id;		//id for the locking protocol
 
 class Task;
 
@@ -91,44 +79,30 @@ class RtTester : public QObject
 
 	public:
             
-            /*********************** SH-START ****************************/
         //Initialize Counter objects to be passed to tasks
         //Number of objects is specified in stm_chronos.hpp
-        /************************ SH-START-2 *************************/
         vector<CounterBench> c_vec;
         double s_max;      //Maximum atomic section percentage
         double s_min;      //Minimum atomic section percentage
         double t_len;      //Total length percentage of all atomic sections
         int n_obj;      //Number of shared objects
-        /************************ SH-END-2 *************************/
-        /*********************** SH-END ****************************/
-        /************************ MIN_OBJ_START **********************/
         double min_obj;      //specifies minimum number of objects per each transaction
-                               //0 is default=>random number of objects per transaction
+                             //0 is default=>random number of objects per transaction
         int num_tasks;        //number of tasks per current experiment
         double wr_per;        //write percentage
-        /************************ MIN_OBJ_END **********************/
-        /******************* SH_SQL_ST *******************/
         int dataset_id;
-        /******************* SH_SQL_END *******************/
 	
 	RtTester() {
 		selector_ = new SchedSelector(TASK_RUN_PRIO);
 		mw_ = NULL;
 		fd_ = NULL;
-                /************************ SH-START **************************/
-                cpu_usage_=100;
-                /*********************** SH-START-2 ************************/
-                s_max=0;
-                s_min=0;
-                t_len=0;
-                n_obj=0;
-                /*********************** SH-END-2 ************************/
-                /************************ SH-END **************************/
-                /******************** MIN_OBJ_START ***********************/
-                min_obj=0;
-                num_tasks=0;
-                /******************** MIN_OBJ_END ***********************/
+        cpu_usage_=100;
+        s_max=0;
+        s_min=0;
+        t_len=0;
+        n_obj=0;
+        min_obj=0;
+        num_tasks=0;
 
 		InitTester();
 	}
@@ -137,9 +111,7 @@ class RtTester : public QObject
 		selector_ = new SchedSelector(TASK_RUN_PRIO);
 		mw_ = window;
 		fd_ = dialog;
-                /************************ SH-START **************************/
-                cpu_usage_=100;
-                /************************ SH-END **************************/
+        cpu_usage_=100;
 		QObject::connect(mw_->runButton, SIGNAL(clicked()), this,
 				 SLOT(runClicked()));
 		QObject::connect(mw_->clearButton, SIGNAL(clicked()),
@@ -240,29 +212,16 @@ class RtTester : public QObject
 	void startRun();
 	/* Main stream for logging */
 	ostringstream *oss;
-        /************************ SH-START *******************************/
-        vector<vector<vector<unsigned long long> > > total_result;
-        vector<vector<vector<string> > > total_log;
-        double getStmSlope() const;
-        void setStmSlope();
-        void printTaskResults(){
-            /*
-            int task_list_size=task_list.size();
-            int data_size;
-            cout<<"ID\tCommit\tAbr_No\tAbr_Dur\tStart\tDeadline\tEndtime\tResponsetime"<<endl;
-            for(int j=0;j<task_list_size;j++){
-                cout<<total_result[j][0][0]<<"\t"<<total_result[j][1][0]<<"\t"<<total_result[j][1][1]<<"\t"<<total_result[j][1][2];
-                data_size=(total_result[j][2]).size();
-                cout<<"\t"<<total_result[j][2][0]<<"\t"<<total_result[j][3][0]<<"\t"<<total_result[j][4][0]<<"\t"<<total_result[j][5][0]<<endl;
-                for(int k=1;k<data_size;k++){
-                    cout<<"\t\t\t\t"<<total_result[j][2][k]<<"\t"<<total_result[j][3][k]<<"\t"<<total_result[j][4][k]<<"\t"<<total_result[j][5][k]<<endl;
-                }
-            }
-            */
-            /***************** SH_SQL_ST ***************/
+    vector<vector<vector<unsigned long long> > > total_result;
+    vector<vector<vector<string> > > total_log;
+    double getStmSlope() const;
+    void setStmSlope();
+    void printTaskResults(){
             setResults(DATASET_ID,total_result,sync_alg);
-            /***************** SH_SQL_END ***************/
-        }
+    }
+    void printEta(QList<Task *>);	//print eta for different transactions 
+    void addEta(QList<Task *>);     //Used with FBLT to specify eta for each transaction
+    double compVec(vector<double>,vector<double>);     //compare two vectors. Return number of shared elements
 
 unsigned long gcd(double m, double n) {
         double t, r;
@@ -303,13 +262,11 @@ unsigned long gcd(double m, double n) {
                 }
             }
         }
-        /*********************** SH-START-2 **************************/
+
         void setMaxSecPer(double); //Set maximum section length percentage
         void setMinSecPer(double); //Set minimum section length percentage
         void setTotSecPer(double); //Set total length percentage of all atomic sections
         void setNumObj(int);    //Set number of shared objects
-        /*********************** SH-END-2 **************************/
-        /************************** MIN_OBJ_START ***********************/
         void setMinObj(double); //Sets minimum number of objects per each transaction as a
                                 //percentage of total number of objects (note that ceiling is assumed)
         double getMinOjb();     //Returns percentage of minimum number of objects per transaction
@@ -322,26 +279,28 @@ unsigned long gcd(double m, double n) {
         double getWrPer(){
             return wr_per;
         }
-        /************************** MIN_OBJ_END ***********************/
-        
-        /************************** PCM-N-F-START *************************/
         int getSched(){
             return selector_->Sched();
         }
-        /************************** PCM-N-F-END *************************/
-        /************************ SH-END *******************************/
-
+    
+    double retryCost(Task*);        //Calculated the upper bound on retry cost for the given task
+    double retryCost2(Task*);       //Another form for calculating retry cost of the specified task
+                                        //which takes the min of objCont1 and objCont2
+    double totalMaxLen(double obj_no); //Extracts the maximum length of any segment in any task that access the specified object
+    double taskMaxLen(Task* t, double obj_no);       //Extracts the maximum length of any segment in the specified task that access the specified object
+    bool prExamined(double obj,vector<double> *preObjects);    //Returns true if the object "obj" has already been examined in previous objects
+    double objCont1(double,Task*,double,double,int);     //Calculates one form of the contribution of the specified object to the retry cost of the specified task
+    double objCont2(double,Task*,double,int);        //Another form for calculating the contribution of the specified object to the retry cost of the specified task
+    double totalOthersMaxLen(double obj_no,Task*);  //Calculates the maximum length segment of any task- except the specified one- that accesses the specified object
+    double secTotalMaxLen(double obj_no);   //Calculates the second total max length
+    void dum_print();
 
 	public slots:
 	void runClicked();
 	void changeText(bool value);
-	/*********************** SH-START-3 ************************/
 	int fileSelected(const QString &file,bool z_op);
-        /*********************** SH-END-3 ************************/
-        /***************** SH_SQL_ST ************************/
-        //Another form of fileSelected that accesses a MySQL databse file
-        int fileSelected(string data_set_host,string data_set,string user_name,string user_pass,int dataset_id,bool z_op);
-        /***************** SH_SQL_END ************************/
+    //Another form of fileSelected that accesses a MySQL databse file
+    int fileSelected(string data_set_host,string data_set,string user_name,string user_pass,int dataset_id,bool z_op);
 	void onLockingDisable(bool locking);
 
 	private:
@@ -417,9 +376,7 @@ unsigned long gcd(double m, double n) {
 	long max_tardiness_;	// The highest tardiness of any task
 
 	ofstream foutput;
-        /************************ SH-START *****************************/
-        double stm_slope;                    // slope for execution of one Counter iteration
-        /************************ SH-END *****************************/
+    double stm_slope;                    // slope for execution of one Counter iteration
     };
 
 #endif

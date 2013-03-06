@@ -1,6 +1,0 @@
-./rt_test.cpp:    this->setMain(getUtilCap(data_set_host,data_set,user_name,user_pass,dataset_id));
-./rt_test.cpp:void RtTester::setMain(int main) {
-Binary file ./rt_test.o matches
-./rt_test.h:	void setMain(int main);
-./main.cpp:			//tester->setMain(main_cpu);
-Binary file ./moc_rt_test.o matches

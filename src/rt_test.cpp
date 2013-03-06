@@ -21,12 +21,8 @@
 
 #include "rt_test.h"
 #include <sys/resource.h>
-/********************* pnf-start *******************/
 #include <rstm_hlp.hpp>
 #include <chronos/chronos_utils.h>
-/******************* pnf-end ***********************/
-
-
 
 #define tsprint(x) x.tv_sec << " sec + " << x.tv_nsec << " nsec"
 
@@ -37,19 +33,81 @@
 static struct sched_param tparam;
 static pthread_attr_t attr;
 
-/***************************** SH-START *************************************/
 double PSY=0.5;
+vector<ResLock> totalreslock;	//set of resources with corresponding lock for each resource
+int lock_pro_id;		//id for the locking protocol
 
 double RtTester::getStmSlope() const {
             return final_stm_slope;
 }
         
 void RtTester::setStmSlope(){
-    //vector<unsigned long> in_proc(1,2);
     main_warmup(proc_count_);
 }
 
-/******************************** SH-START-2 ***********************************/
+double RtTester::compVec(vector<double> v1,vector<double> v2){
+    //compare two vectors and return number of shared elements
+    //double shared_obj=0;   //number of shared objects
+    for(unsigned int i=0;i<v1.size();i++){
+        for(unsigned int j=0;j<v2.size();j++){
+            if(v1[i]==v2[j]){
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+void RtTester::addEta(QList<Task*> task_list){
+    //Specify eat for each transaction
+    vector<double> tmp_obj;    //set of objects in current tx in current task
+    vector<double> other_tmp_obj;       //set of objects current tx in opponent task
+    int sec_size,other_sec_size;       //Number of sections in current task and other task
+    for(int i=0;i<task_list.count();i++){
+        //Traverse through tasks
+        sec_size=task_list[i]->vec[0][0].size();
+        for(int sec_inx=0;sec_inx<sec_size;sec_inx++){
+            if(task_list[i]->vec[0][0][sec_inx]==0){
+                //Real-time section of current task
+                //Add dummy value to eta
+                task_list[i]->vec[4][0].push_back(-1);
+                continue;
+            }
+	    task_list[i]->vec[4][0].push_back(0);
+            tmp_obj=task_list[i]->vec[2][sec_inx];
+            for(int j=0;j<task_list.count();j++){
+                //Traverse through all tasks except i
+                if(j==i){
+                    continue;
+                }
+                other_sec_size=task_list[j]->vec[0][0].size();
+                for(int other_inx=0;other_inx<other_sec_size;other_inx++){
+                    if(task_list[j]->vec[0][0][other_inx]==0){
+                        //Rea-time section of opponent task
+                        continue;
+                    }
+                    other_tmp_obj=task_list[j]->vec[2][other_inx];
+                    task_list[i]->vec[4][0][sec_inx]+=compVec(tmp_obj,other_tmp_obj);
+                }
+                task_list[i]->vec[4][0][sec_inx]*=(double)ceil((long double)(task_list[i]->period())/(long double)(task_list[j]->period()));
+            }
+        }
+    }
+}
+
+void RtTester::printEta(QList<Task*> task_list){
+    //prints eta values for different transactions
+    int sec_size;
+    for(int i=0;i<task_list.count();i++){
+        cout<<"Task "<<i<<":";
+        sec_size=task_list[i]->vec[0][0].size();
+        for(int j=0;j<sec_size;j++){
+            cout<<task_list[i]->vec[4][0][j]<<",";
+        }
+        cout<<endl;
+    }
+}
+
 void RtTester::setMaxSecPer(double a){
     //Set maximum section length percentage
     s_max=a;
@@ -74,13 +132,9 @@ void RtTester::setNumObj(int a){
                                 //BenchCounters. For simplicity, deal with it
     }
 }
-/******************************** SH-END-2 ***********************************/
-/***************************** SH-END *************************************/
-/********************* MIN_OBJ_START ****************************/
+
 void RtTester::setMinObj(double a){
-    //if(a>0){//If provided or not default
-        min_obj=a;
-    //}
+    min_obj=a;
 }
 
 double RtTester::getMinOjb(){
@@ -98,7 +152,6 @@ int RtTester::getNumTasks(){
     //return number of tasks per current experiment
     return num_tasks;
 }
-/********************* MIN_OBJ_END ****************************/
 
 Task *RtTester::FindByTid(int tid) {
 	for(int i = 0; i < CountTasks(); i++) {
@@ -124,17 +177,18 @@ void RtTester::onLockingDisable(bool enabled) {
 
 /* Calculate the time required to lock and unlock a resource */
 void *getRtLockTime(void *p) {
+	/*
 	struct sched_param param;
 	chronos_mutex_t *r = new chronos_mutex_t();
-	chronos_mutex_init(r);
-
-        param.sched_priority = TASK_RUN_PRIO;
-        sched_setscheduler(0, SCHED_FIFO, &param);
-	chronos_mutex_lock(r);
-	chronos_mutex_unlock(r);
-	chronos_mutex_destroy(r);
+	chronos_mutex_init(&r);
+    param.sched_priority = TASK_RUN_PRIO;
+    sched_setscheduler(0, SCHED_FIFO, &param);
+	chronos_mutex_lock(&r);
+	chronos_mutex_unlock(&r);
+	chronos_mutex_destroy(&r);
 	delete r;
 	pthread_exit(NULL);
+	*/
 }
 
 /* Calculate the time required to lock and unlock a 
@@ -168,7 +222,6 @@ void RtTester::calcLockTime() {
         sched_setscheduler(0, SCHED_OTHER, &param);
 }
 
-/**************************** SH_SQL_ST ************************************/
 int RtTester::fileSelected(string data_set_host,string data_set,string user_name,string user_pass,int datasetID,bool z_op){
     //Another form of fileSelected that accesses a MySQL database file
     if(!initialized){
@@ -236,15 +289,7 @@ int RtTester::fileSelected(string data_set_host,string data_set,string user_name
         t->set_exec_time(tasks_info[i].wcet);
         if(!z_op){
             t->addPortions(&tasks_info[i]);
-            /********************* MIN_OBJ_END **********************/
-            cout<<"***************************************"<<endl;
-            t->printTaskPortions();
-	    cout<<"number of cpus:"<<t->cpus()<<endl;
-	    cout<<"main cpu:"<<main_cpu()<<endl;
-	    cout<<"main cpu mask:"<<MainCpuMask()<<endl;
-            cout<<"***************************************"<<endl;
         }
-        /******************* SH-END-3 *************************/
         task_list.append(t);
     }
     if(!z_op){
@@ -268,10 +313,19 @@ int RtTester::fileSelected(string data_set_host,string data_set,string user_name
             lcm = lcm * task_list[i]->period();
     }
 
+    /*
+     * In case of OMLP, specify the required lock for each resource
+     */
+    if(!sync_alg.compare("OMLP")){
+    	totalreslock=getOMLPResLock(tasks_info);
+    }
+    else if(!sync_alg.compare("RNLP")){
+    	totalreslock=getRNLPResLock(tasks_info);
+    }
+
     print();
     return (int)lcm/MILLION;
 }
-/**************************** SH_SQL_END ************************************/
 
 /* Read in the file */
 /* FIXME: This might be the ugliest function ever written. We have stuff nested
@@ -288,15 +342,11 @@ int RtTester::fileSelected(const QString &file,bool z_op) {
 		delete task_list.takeFirst();
 
 	ifstream tsfile (file.toLatin1().data());
-        /********************* SH-START-TOD*********************/
         stringstream stm_obj_no;
 	stm_obj_no<<file.toLatin1().data()<<"_stm_"<<t_len<<"_"<<s_max<<"_"<<s_min<<"_"<<min_obj<<"_"<<n_obj;
         string stm_file_name=stm_obj_no.str();
         ifstream stmfile(stm_file_name.c_str());
-        /********************* SH-END-TOD*********************/
-        /******************* MULTIOBJECT-START *********************/
         srand(time(NULL));
-        /******************* MULTIOBJECT-END *********************/
 	if(tsfile.is_open()) {
 		if(mw_)
 			mw_->huaCBox->setEnabled(false);
@@ -344,9 +394,6 @@ int RtTester::fileSelected(const QString &file,bool z_op) {
 					     << " in the task set is invalid." << endl;
 				else {
 					Task *t = new Task();
-					//t->SetupTask(this, oss, &aborts_, slope_);
-                                        /************************** SH-START-3 ********************************/
-                                        //The following vectors are used to record final results from the created task
                                         if(!z_op){
                                             vector<vector<unsigned long long> > task_result_new;
                                             vector<unsigned long long> id_out;
@@ -369,7 +416,6 @@ int RtTester::fileSelected(const QString &file,bool z_op) {
                                             total_log.push_back(vector<vector<string> > ());
                                             t->SetupTask(this, oss, &aborts_, slope_,stm_slope,&c_vec,wr_per);
                                         }
-                                        /************************** SH-END-3 ********************************/
 					if(list[0] == "all") {
 						for(int j = 0; j < proc_count_; j++) {
 							t->AddCpu(j);
@@ -407,33 +453,26 @@ int RtTester::fileSelected(const QString &file,bool z_op) {
 						if(mw_)
 							mw_->huaCBox->setEnabled(true);
 					}
-                                        /******************* SH-START-3 *************************/
                                         if(!z_op){
-                                            /********************* MIN_OBJ_START **********************/
-                                            //The following line is changed in old projects
                                             t->addPortions(t->exec_time(),slope(),getStmSlope(),&stmfile,stm_file_name,s_max,s_min,t_len,n_obj,min_obj,num_tasks,task_list.size());
-                                            /********************* MIN_OBJ_END **********************/
                                             cout<<"***************************************"<<endl;
                                             t->printTaskPortions();
                                             cout<<"***************************************"<<endl;
                                         }
-                                        /******************* SH-END-3 *************************/
 					task_list.append(t);
 				}
 			}
 		}
 	}
+	stmfile.close();
 	tsfile.close();
-        
-        /************************ SH-START-3 *************************/
         if(!z_op){
             for(int i=0;i<task_list.count();i++){
                 //Assign a vector for each task to put its records
                 task_list[i]->setDebVec(&(total_result[i]),&(total_log[i]));
             }
+            addEta(task_list);
         }
-        /************************ SH-END-3 *************************/
-
 	/* Calculate the total cpu utilization for the taskset */
 	for(int i = 0; i < task_list.count(); i++) {
 		utilization += task_list[i]->utilization();
@@ -506,7 +545,7 @@ void RtTester::setSchedAlgo(QString sched, bool abort_flag, bool dead_flag,
 	use_hua_ = hua_flag;
 	
 	selector_->setBaseSched(sched);
-	selector_->setSchedOption(SCHED_FLAG_ABORT_IDLE, abort_flag);
+	//selector_->setSchedOption(SCHED_FLAG_ABORT_IDLE, abort_flag);
 	selector_->setSchedOption(SCHED_FLAG_HUA, hua_flag);
 	selector_->setSchedOption(SCHED_FLAG_PI, pi_flag);
 	selector_->setSchedOption(SCHED_FLAG_NO_DEADLOCKS, dead_flag);
@@ -586,7 +625,7 @@ void RtTester::extract() {
 		nested_locking_ = true;
 
 	selector_->setBaseSched(mw_->schedCmbBox->currentText());
-	selector_->setSchedOption(SCHED_FLAG_ABORT_IDLE, mw_->abortIdleCBox->isChecked());
+//	selector_->setSchedOption(SCHED_FLAG_ABORT_IDLE, mw_->abortIdleCBox->isChecked());
 	selector_->setSchedOption(SCHED_FLAG_HUA, mw_->huaCBox->isChecked());
 	selector_->setSchedOption(SCHED_FLAG_PI, mw_->piCBox->isChecked());
 	selector_->setSchedOption(SCHED_FLAG_NO_DEADLOCKS, mw_->noDeadlocksCBox->isChecked());
@@ -660,11 +699,19 @@ int RtTester::run() {
 		goto out_sched;
 	}
 
-	/* Declare and initialize the resources and transactional memory */
+	/* Declare and initialize the resources */
 	if(locking_) {
 		for(i = 0; i < lock_count_; i++) {
 			chronos_mutex_t *r = new chronos_mutex_t();
-			chronos_mutex_init(r);
+//			chronos_mutex_init(&r);
+			lock_list.append(r);
+		}
+	}
+	if(!sync_alg.compare("OMLP") || !sync_alg.compare("RNLP")){
+		set<int> distlocks=getDisLocks(totalreslock);
+		for(set<int>::iterator it=distlocks.begin();it!=distlocks.end();it++){
+			chronos_mutex_t *r = new chronos_mutex_t();
+			chronos_mutex_init(&r,&lock_pro_id);
 			lock_list.append(r);
 		}
 	}
@@ -679,20 +726,11 @@ int RtTester::run() {
 	pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
 	pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
 	pthread_attr_setschedparam(&attr, &tparam);
-	/***************** PNF_START **********************/
-	//mu_init();
-	/********************* PNF_END **********************/
 	/* Generate time info for each task */
 	for(i = 0; i < CountTasks(); i++) {
 		task_list[i]->InitTask(i, verbose_, locking_, nested_locking_);
 		task_list[i]->SetUsages(usage_abs(), cs_len());
-                /************************* SH-START *********************************/
-                task_list[i]->modExecTime(usage_abs());
-                /************************** Debug 1 start ***********************/
-                //task_list[i]->printTaskPortions();
-                //cout<<"****************************************"<<endl;
-                /************************** Debug 1 end ***********************/
-                /************************* SH-END *********************************/
+        task_list[i]->modExecTime(usage_abs());
 		task_list[i]->SetRuntime(run_time_us());
 		task_list[i]->set_start_time(&g_start_time_);
 		atomic_int_add(&sys_total_release_, task_list[i]->GetRunReleases());
@@ -727,7 +765,7 @@ int RtTester::run() {
 	/* Free resources */
 	while (!lock_list.isEmpty()) {
 		chronos_mutex_t *r = lock_list.takeFirst();
-		chronos_mutex_destroy(r);
+		chronos_mutex_destroy(&r);
 		delete r;
 	}
 
@@ -760,10 +798,6 @@ out_sched:
 		<< ", Utility: " << sys_met_util() << "/" << sys_total_util()
 		<< ", Aborted: " << sys_abort_count()
 		<< ", Tardiness: " << max_tardiness() << endl;
-        /********************** SH-START ****************************/
         printTaskResults();
-        //cout<<"************ CM Log ************"<<endl;
-//        printTotalLog();
-        /********************** SH-END ****************************/
 	return 1;
 }

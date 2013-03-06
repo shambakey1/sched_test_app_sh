@@ -44,22 +44,17 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-
+#include <linux/unistd.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 #include <chronos/chronos_utils.h>
 #include <chronos/chronos_aborts.h>
 #include "rt_test.h"
-/****************** SH_SQL_ST *******************/
-#include <Util.hpp>
-/****************** SH_SQL_END *******************/
-
-/********************* SH-START ********************/
 #include <vector>
 #include <stm_chronos.hpp>
 #include <rstm_hlp.hpp>
 
-
 extern vector<CounterBench> *coun_obj;                       //Total Objects to be assigned from to different transactional parts
-/********************* SH-END ********************/
 
 class RtTester;
 
@@ -69,26 +64,25 @@ using namespace std;
 class Task
 {
 	public:
-        /********* SH_SQL_ST ********/
         unsigned long long prev_commits;        //Holds previous number of commits for current thread
         unsigned long long prev_abr_no;         //Holds previous number of abort number for current thread
         unsigned long long prev_abr_dur;        //Holds previous amount of abort duration for current thread
-        /********* SH_SQL_END ********/
+        vector<unsigned long long> cur_st_vec;	//Records number of success attempts for a tx, number of failure attemps, and time for failure attemps
 	Task() {
 		output_ = NULL;
+		cpus_org_=0;
 		cpus_ = 0;
 		exec_time_ = 0;
-		locked_usage_ = 0;
-		unlocked_usage_ = 0;
+		locked_usage_ = 0;		unlocked_usage_ = 0;
 		period_ = 0;
 		utility_ = 0;
 		abort_utility_ = 0;
 		utilization_ = 0;
 		period_ts_.tv_sec = 0;
 		period_ts_.tv_nsec = 0;
-                prev_commits=0;
-                prev_abr_no=0;
-                prev_abr_dur=0;
+        prev_commits=0;
+        prev_abr_no=0;
+        prev_abr_dur=0;
 	}
 
 	/* Initialize anything needed for another run of the task */
@@ -106,8 +100,8 @@ class Task
 		max_tardiness_ = 0;
 	}
 
-	void InitCpus() { cpus_ = 0; }
-	void AddCpu(int cpu) { cpus_ += pow(2, cpu); }
+	void InitCpus() { cpus_ = 0; cpus_org_=0; }
+	void AddCpu(int cpu) { cpus_ += pow(2, cpu);cpus_org_++; }
 	int AddRelease() {
 		releases_++;
 		return releases_ <= max_releases_;
@@ -145,6 +139,7 @@ class Task
 	bool nested() const { return nested_; }
 	bool verbose() const { return verbose_; }
 	unsigned long cpus() const { return cpus_; }
+	unsigned long cpus_org() const {return cpus_org_;}
 	unsigned long exec_time() const { return exec_time_; }
 	unsigned long unlocked_usage() const { return unlocked_usage_; }
 	unsigned long locked_usage() { return locked_usage_; }
@@ -188,22 +183,18 @@ class Task
 	/* The pthread for this task */
 	int start(pthread_attr_t *attr);
 	pthread_t thread;
-        
-        /**************** SH_SQL_ST *****************/
-        void addPortions(struct rt_task *task_info);  //Another form of addPortions that uses MySQL database information
-        /**************** SH_SQL_END *****************/
-
-	/************************* SH-START *****************************/
-	/********************* SH-START-2******************/
+    void addPortions(struct rt_task *task_info);  //Another form of addPortions that uses MySQL database information
 	void addPortions(double,double,double,ifstream*,string,double,double,double,int,double,int,int);
-        int num_sh_obj;    //number of shared objects
-        /********************* SH-END-2******************/
+	int num_sh_obj;    //number of shared objects
+    vector<unsigned long long> printStatistics();   //It performs the same as stm::printStatistics but for lock-free
+    struct timespec lock_start;	//Record start time to accquire locks for current critical section
+    struct timespec lock_success1;       //Record start time to acctually accessing objects after locks has been acquired
+    struct timespec lock_end;	//Record end time to release locks for current critical section
+
 	void printTaskPortions(void);
-        /******************************** MIN_OBJ_START *******************************/
-        //The following line is commented out in original projects
-        //void SetupTask(RtTester *tester, ostringstream *output, chronos_aborts_t *a, double slope, double stmslope,vector<CounterBench>* c_in);
-        void SetupTask(RtTester *tester, ostringstream *output, chronos_aborts_t *a, double slope, double stmslope,vector<CounterBench>* c_in,double wr);
-        /******************************** MIN_OBJ_END *******************************/
+    //The following line is commented out in original projects
+    //void SetupTask(RtTester *tester, ostringstream *output, chronos_aborts_t *a, double slope, double stmslope,vector<CounterBench>* c_in);
+    void SetupTask(RtTester *tester, ostringstream *output, chronos_aborts_t *a, double slope, double stmslope,vector<CounterBench>* c_in,double wr);
         void modExecTime(double per);
         int getMaxReleases(){
             return max_releases_;
@@ -213,24 +204,29 @@ class Task
             task_result=in_vec;
             log_result=in_log;
         }
-        /************************* PNF-START **************************/
         pthread_t* getCurTh(){   //Returns a pointer for the current thread
 	    thread=pthread_self();
             return &thread;
         }
-        /************************* PNF-END **************************/
-
         vector< vector<unsigned long long> > *task_result;//Holds the data to be print for this task
-	vector< vector<string> > *log_result;		//Holds log results for the CM
-	/************************ SH-END ******************************/
-        /********************** MULTIOBJECT-START ***********************/
+		vector< vector<string> > *log_result;		//Holds log results for the CM
         vector<double> genObj_def(int,double,int,int);
         vector<double> genObj(int num_obj,double min_obj_per,int num_tasks,int task_id);        //Generates random distincit objects for the current transaction
-	
-	vector<double> genObj_old(int num_obj,double min_obj_no,int num_tasks,int task_id);
-                                                                  //>= ceiling(min_obj*num_obj)
-//        vector<double> genObj_old(int num_obj,double min_obj_no,int num_tasks,int task_id);
-        /********************** MULTIOBJECT-END ***********************/
+		vector<double> genObj_old(int num_obj,double min_obj_no,int num_tasks,int task_id);	//>= ceiling(min_obj*num_obj)
+		vector< vector<vector<double> > > vec;        // Will hold structure of task as the real time and stm portions
+		                                    // and their corresponding length
+		vector<vector <double> > por_type;             // 0 for rt, 1 for stm
+		vector<vector <double> > por_length;           // time length of that portion of the task
+        vector<vector <double> > por_counter;       //Maps which counter assigned to which transactional port
+                                                //In this stage, it is one counter object per transaction.
+                                                //Later, it can be multiple objects per transactional section
+                                                //whether nested or not
+        vector<vector <double> > mod_por_length;  //same as por_length but multiplied by the cpu_usage parameter
+        vector<vector <double> > task_eta;      //specifies eta for each transaction. Used with FBLT
+        double stm_exec_slope;
+        double wr_per;  //write operation percentage
+        double min_obj;              //minimum number of objects per transaction.
+        int num_tasks;
 
 	private:
 	/* The actual task function */
@@ -248,7 +244,9 @@ class Task
 	unsigned long exec_time_;
 
 	/* Thread information */
-	unsigned long cpus_;
+	unsigned long cpus_org_;	//decimal count of number of cpus
+	unsigned long cpus_;	//binary count of number of cpus
+
 	int task_id_, thread_id_;
 
 	/* Run information */
@@ -274,25 +272,6 @@ class Task
 
 	/* Locks */
 	QList<int> lock_list;
-        
-        
-        /********************* SH-START *************************/
-	vector< vector<vector<double> > > vec;        // Will hold structure of task as the real time and stm portions
-		                                    // and their corresponding length
-	vector<vector <double> > por_type;             // 0 for rt, 1 for stm
-	vector<vector <double> > por_length;           // time length of that portion of the task
-        vector<vector <double> > por_counter;       //Maps which counter assigned to which transactional port
-                                                //In this stage, it is one counter object per transaction.
-                                                //Later, it can be multiple objects per transactional section
-                                                //whether nested or not
-        vector<vector <double> > mod_por_length;  //same as por_length but multiplied by the cpu_usage parameter
-        double stm_exec_slope;
-        double wr_per;  //write operation percentage
-        /********************* SH-END *************************/
-        /****************** MIN_OBJ_START *******************/
-        double min_obj;              //minimum number of objects per transaction.
-        int num_tasks;                //Number of tasks per current experiment
-        /****************** MIN_OBJ_END *******************/
 };
 
 #endif
