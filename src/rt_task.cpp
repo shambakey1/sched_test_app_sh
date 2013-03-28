@@ -266,10 +266,10 @@ void *Task::task(void *value) {
 
 		if(tester->chronos())
 			me->EndRtSegment();
-
+/*
 		if(me->aborted())
 			me->AddAborted();
-
+*/
 		if(accrue && deadline_met(&end_time, me->deadline())) {
 			me->AddDeadline();
 			me->AddUtility();
