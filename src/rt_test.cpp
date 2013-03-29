@@ -270,8 +270,8 @@ int RtTester::fileSelected(string data_set_host,string data_set,string user_name
             task_result_new.push_back(response_out);
             total_result.push_back(task_result_new);
             total_log.push_back(vector<vector<string> > ());
-            t->SetupTask(this, oss, &aborts_, slope_,stm_slope,&c_vec,wr_per);
         }
+        t->SetupTask(this, oss, &aborts_, slope_,stm_slope,&c_vec,wr_per);
         if(tasks_info[i].processors[0]==-1){
             //All processors can be used for current task
             for(int j = 0; j < proc_count_; j++) {

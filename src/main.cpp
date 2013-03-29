@@ -410,10 +410,10 @@ int main(int argc, char **argv) {
 		} else {
 		    cout<<lcm<<endl;
 		}
-                
+		if(isSTM(sync_alg)){
+			stm::shutdown(0);
+		}
 		return 0;
 	}
-	if(isSTM(sync_alg)){
-		stm::shutdown(0);
-	}
+
 }
