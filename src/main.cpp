@@ -398,6 +398,7 @@ int main(int argc, char **argv) {
                     tester->setNumTasks(num_tasks);
                 }
                 int lcm=tester->fileSelected(dataset_host,dataset,dataset_user,dataset_pass,dataset_id,no_run);
+                run_time=lcm;
 
 		if (no_run == false) {
 			tester->setSchedAlgo(*sched, abort_flag, deadlock_flag, pi_flag, hua_flag);

@@ -217,7 +217,7 @@ class RtTester : public QObject
     double getStmSlope() const;
     void setStmSlope();
     void printTaskResults(){
-            setResults(DATASET_ID,total_result,sync_alg);
+            setResults(DATASET_ID,total_result,sync_alg,CurrentAlgoName().toStdString());
     }
     void printEta(QList<Task *>);	//print eta for different transactions 
     void addEta(QList<Task *>);     //Used with FBLT to specify eta for each transaction
