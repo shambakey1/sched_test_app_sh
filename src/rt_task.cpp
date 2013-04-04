@@ -392,9 +392,11 @@ void Task::addPortions(struct rt_task *task_info){
     Task::vec.push_back(por_length),
     Task::vec.push_back(por_counter);
     Task::vec.push_back(mod_por_length);
+    Task::vec.push_back(task_eta);
     vec[0].push_back(vector<double>());
     vec[1].push_back(vector<double>());
     vec[3].push_back(vector<double>());
+    vec[4].push_back(vector<double>());
     for(unsigned int i=0;i<task_info->portions.size();i++){
         vec[0][0].push_back(task_info->portions[i].por_type);
         vec[1][0].push_back(task_info->portions[i].por_len);

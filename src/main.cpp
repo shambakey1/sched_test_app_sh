@@ -141,6 +141,8 @@ int main(int argc, char **argv) {
                 {"dataset_id",required_argument,0,0},
                 {"sync",required_argument,0,0},
                 {"checkpoint",required_argument,0,0},
+                {"sh_lev",required_argument,0,0},
+                {"transitive",required_argument,0,0},
                 {0, 0, 0, 0}
               };
             int option_index = 0;
@@ -186,13 +188,21 @@ int main(int argc, char **argv) {
             else if(!strcmp(long_options[option_index].name,"checkpoint")){
 				string cp_val=optarg;
 				cp_val=upperStr(cp_val);
-				if(cp_val.compare(upperStr("yes")) && cp_val.compare(upperStr("y"))){
+				if(!cp_val.compare(upperStr("yes")) || !cp_val.compare(upperStr("y"))){
 					setCheckpoint(true);
 				}
-				else{
-					cout<<"Please choose 'yes' or 'y' if you want checkpointing enabled"<<endl;
-					exit(0);
+				//default value for "checkpoint" is false
+			}
+            else if(!strcmp(long_options[option_index].name,"transitive")){
+				string transitive=optarg;
+				transitive=upperStr(transitive);
+				if(!transitive.compare(upperStr("yes")) || !transitive.compare(upperStr("y"))){
+					setTransitiveRetry(true);
 				}
+				//default value for "transitive" is false
+			}
+            else if(!strcmp(long_options[option_index].name,"sh_lev")){
+				sh_lev=atof(optarg);
 			}
 
             switch (c) {
@@ -230,7 +240,7 @@ int main(int argc, char **argv) {
                     break;
 
             case 'r' :
-                    run_time = atoi(optarg);
+                    //run_time = atoi(optarg);
                     break;
 
             case 'a' :
@@ -397,7 +407,7 @@ int main(int argc, char **argv) {
                 if(num_tasks>0){
                     tester->setNumTasks(num_tasks);
                 }
-                int lcm=tester->fileSelected(dataset_host,dataset,dataset_user,dataset_pass,dataset_id,no_run);
+                int lcm=tester->fileSelected(dataset_host,dataset,dataset_user,dataset_pass,dataset_id,no_run,sh_lev,TRANSITIVE);
                 run_time=lcm;
 
 		if (no_run == false) {

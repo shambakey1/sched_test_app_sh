@@ -217,7 +217,7 @@ class RtTester : public QObject
     double getStmSlope() const;
     void setStmSlope();
     void printTaskResults(){
-            setResults(DATASET_ID,total_result,sync_alg,CurrentAlgoName().toStdString());
+            setResults(DATASET_ID,total_result,sync_alg,CurrentAlgoName().toStdString(),STM_CHECKPOINT,sh_lev,TRANSITIVE);
     }
     void printEta(QList<Task *>);	//print eta for different transactions 
     void addEta(QList<Task *>);     //Used with FBLT to specify eta for each transaction
@@ -300,7 +300,7 @@ unsigned long gcd(double m, double n) {
 	void changeText(bool value);
 	int fileSelected(const QString &file,bool z_op);
     //Another form of fileSelected that accesses a MySQL databse file
-    int fileSelected(string data_set_host,string data_set,string user_name,string user_pass,int dataset_id,bool z_op);
+    int fileSelected(string data_set_host,string data_set,string user_name,string user_pass,int dataset_id,bool z_op,double sh_lev,int transitive);
 	void onLockingDisable(bool locking);
 
 	private:

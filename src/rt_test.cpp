@@ -222,7 +222,7 @@ void RtTester::calcLockTime() {
         sched_setscheduler(0, SCHED_OTHER, &param);
 }
 
-int RtTester::fileSelected(string data_set_host,string data_set,string user_name,string user_pass,int datasetID,bool z_op){
+int RtTester::fileSelected(string data_set_host,string data_set,string user_name,string user_pass,int datasetID,bool z_op,double sh_lev,int transitive){
     //Another form of fileSelected that accesses a MySQL database file
     if(!initialized){
         initDB(data_set_host,data_set,user_name,user_pass);
@@ -239,7 +239,7 @@ int RtTester::fileSelected(string data_set_host,string data_set,string user_name
     
     /* Extract tasks' information from dataset */
     vector<struct rt_task> tasks_info;     //Tasks of a dataset with their portions
-    tasks_info=readTaskSet(data_set_host,data_set,user_name,user_pass,dataset_id);
+    tasks_info=readTaskSet(data_set_host,data_set,user_name,user_pass,dataset_id,sh_lev,transitive);
     
     /* Empty task_list if it contains any previous tasks */
     while (!task_list.isEmpty()){
@@ -297,6 +297,7 @@ int RtTester::fileSelected(string data_set_host,string data_set,string user_name
             //Assign a vector for each task to put its records
             task_list[i]->setDebVec(&(total_result[i]),&(total_log[i]));
         }
+        addEta(task_list);
     }
     /* Calculate the total cpu utilization for the taskset */
     for(int i = 0; i < task_list.count(); i++) {
