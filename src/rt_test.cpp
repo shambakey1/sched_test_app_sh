@@ -645,12 +645,12 @@ bool RtTester::verify() {
 		*oss << "Invalid CPU usage." << endl;
 		verified = false;
 	}
-
+/*
 	if(run_time_ <= 0 || run_time_ > 3600) {
 		*oss << "Invalid execution time." << endl;
 		verified = false;
 	}
-
+*/
 	if((cs_len_ <= 0 && locking_) || cs_len_ > 100) {
 		*oss << "Invalid critical section length." << endl;
 		verified = false;
