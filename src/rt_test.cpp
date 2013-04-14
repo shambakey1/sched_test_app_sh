@@ -325,7 +325,7 @@ int RtTester::fileSelected(string data_set_host,string data_set,string user_name
     }
 
     print();
-    return (int)lcm/MILLION;
+    return lcm;
 }
 
 /* Read in the file */
@@ -748,8 +748,12 @@ int RtTester::run() {
 		task_list[i]->start(&attr);
 
 	clock_gettime(CLOCK_REALTIME, &g_start_time_);
-	g_end_time_.tv_sec = g_start_time_.tv_sec + run_time_s();
-	g_end_time_.tv_nsec = g_start_time_.tv_nsec;
+	g_end_time_.tv_nsec=g_start_time_.tv_nsec+run_time_us()*1000;
+	g_end_time_.tv_sec=g_start_time_.tv_sec;
+	while(g_end_time_.tv_nsec>=1000000000){
+		g_end_time_.tv_nsec-=1000000000;
+		g_end_time_.tv_sec+=1;
+	}
 
 	/* Sleep while the tasks are run and then print */
 	for(int i = 0; i < CountTasks(); i++) {

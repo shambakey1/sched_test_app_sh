@@ -419,7 +419,7 @@ int main(int argc, char **argv) {
 			tester->setWrPer(wr_per);       //set write percentage
 			tester->startRun();
 		} else {
-		    cout<<lcm<<endl;
+		    cout<<run_time<<endl;
 		}
 		if(isSTM(sync_alg)){
 			stm::shutdown(0);

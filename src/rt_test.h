@@ -175,8 +175,8 @@ class RtTester : public QObject
 	bool nested_locking() const { return nested_locking_; }
 	bool use_hua() const { return use_hua_; }
 	int main_cpu() const { return main_cpu_; }
-	unsigned int run_time_s() const { return run_time_; }
-	unsigned int run_time_us() const { return run_time_*MILLION; }
+	double run_time_s() const { return run_time_/MILLION; }
+	unsigned int run_time_us() const { return run_time_; }
 	unsigned long lock_time() const { return lock_time_; }
 	int lock_count() const { return lock_count_; }
 	double usage_abs() const { return ((double)cpu_usage_)/100; }
