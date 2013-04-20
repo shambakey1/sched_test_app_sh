@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
     double obj_min=0;       //Specifies minimum number of objects per transaction
                             //If 0, then random number of objects per transaction is assumed (DEFAULT)
     int num_tasks=0;        //Total number of tasks per current experiment
-    double wr_per=1;        //percentage of write operations. (1-wr_per) is percentage of read operations
+    double wr_per=-1;        //percentage of write operations. (1-wr_per) is percentage of read operations
 	bool lock_flag = false, verbose_flag = false, log_flag = false,
 	     no_run = false, excel_flag = false, abort_flag = false,
 	     hua_flag = false, deadlock_flag = false, pi_flag = false, 
@@ -407,6 +407,7 @@ int main(int argc, char **argv) {
                 if(num_tasks>0){
                     tester->setNumTasks(num_tasks);
                 }
+                tester->setWrPer(wr_per);       //set write percentage
                 int lcm=tester->fileSelected(dataset_host,dataset,dataset_user,dataset_pass,dataset_id,no_run,sh_lev,TRANSITIVE);
                 run_time=lcm;
 
@@ -416,7 +417,6 @@ int main(int argc, char **argv) {
 			tester->setLocking(lock_flag, nested_flag, lock_len);
 			tester->setOutputFormat(verbose_flag, log_flag, excel_flag, gnu_flag);
 			tester->setMain(main_cpu);
-			tester->setWrPer(wr_per);       //set write percentage
 			tester->startRun();
 		} else {
 		    cout<<run_time<<endl;

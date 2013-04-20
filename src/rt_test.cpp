@@ -224,6 +224,10 @@ void RtTester::calcLockTime() {
 
 int RtTester::fileSelected(string data_set_host,string data_set,string user_name,string user_pass,int datasetID,bool z_op,double sh_lev,int transitive){
     //Another form of fileSelected that accesses a MySQL database file
+	if(wr_per<0){
+		cout<<"write percentage is not specified"<<endl;
+		exit(0);
+	}
     if(!initialized){
         initDB(data_set_host,data_set,user_name,user_pass);
     }
