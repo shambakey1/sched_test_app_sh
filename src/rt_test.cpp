@@ -731,44 +731,86 @@ int RtTester::run() {
 	pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
 	pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
 	pthread_attr_setschedparam(&attr, &tparam);
-	/* Generate time info for each task */
-	for(i = 0; i < CountTasks(); i++) {
-		task_list[i]->InitTask(i, verbose_, locking_, nested_locking_);
-		task_list[i]->SetUsages(usage_abs(), cs_len());
-        task_list[i]->modExecTime(usage_abs());
-		task_list[i]->SetRuntime(run_time_us());
-		task_list[i]->set_start_time(&g_start_time_);
-		atomic_int_add(&sys_total_release_, task_list[i]->GetRunReleases());
-		atomic_int_add(&sys_total_util_, task_list[i]->GetRunUtility());
+	if(!CALIBRATION){
+		//non-calibration mode: Run all tasks in parallel
+		/* Generate time info for each task */
+		for(i = 0; i < CountTasks(); i++) {
+			task_list[i]->InitTask(i, verbose_, locking_, nested_locking_);
+			task_list[i]->SetUsages(usage_abs(), cs_len());
+			task_list[i]->modExecTime(usage_abs());
+			task_list[i]->SetRuntime(run_time_us());
+			task_list[i]->set_start_time(&g_start_time_);
+			atomic_int_add(&sys_total_release_, task_list[i]->GetRunReleases());
+			atomic_int_add(&sys_total_util_, task_list[i]->GetRunUtility());
 
-		if(verbose_)
-			*oss << "period: " << task_list[i]->period() 
-			<< " usec \t usage: " << task_list[i]->unlocked_usage() 
-			<< " unlocked + " << task_list[i]->locked_usage() 
-			<< " locked usec" << endl;
+			if(verbose_)
+				*oss << "period: " << task_list[i]->period()
+				<< " usec \t usage: " << task_list[i]->unlocked_usage()
+				<< " unlocked + " << task_list[i]->locked_usage()
+				<< " locked usec" << endl;
+		}
+
+		for(i = 0; i < CountTasks(); i++)
+			task_list[i]->start(&attr);
+
+		clock_gettime(CLOCK_REALTIME, &g_start_time_);
+		g_end_time_.tv_nsec=g_start_time_.tv_nsec+run_time_us()*1000;
+		g_end_time_.tv_sec=g_start_time_.tv_sec;
+		while(g_end_time_.tv_nsec>=1000000000){
+			g_end_time_.tv_nsec-=1000000000;
+			g_end_time_.tv_sec+=1;
+		}
+
+		/* Sleep while the tasks are run and then print */
+		for(int i = 0; i < CountTasks(); i++) {
+			long tardiness;
+			pthread_join(task_list[i]->thread, NULL);
+			sys_met_release_ += task_list[i]->deadlines_met();
+			sys_met_util_ += task_list[i]->utility_accrued();
+			sys_abort_count_ += task_list[i]->jobs_aborted();
+			tardiness = task_list[i]->max_tardiness();
+			if(tardiness < max_tardiness_)
+				max_tardiness_ = tardiness;
+		}
 	}
+	else{
+		//calibration mode: Run each task individually
+		/* Generate time info for each task */
+		for(i = 0; i < CountTasks(); i++) {
+			task_list[i]->InitTask(i, verbose_, locking_, nested_locking_);
+			task_list[i]->SetUsages(usage_abs(), cs_len());
+			task_list[i]->modExecTime(usage_abs());
+			task_list[i]->SetRuntime(run_time_us());
+			task_list[i]->set_start_time(&g_start_time_);
+			atomic_int_add(&sys_total_release_, task_list[i]->GetRunReleases());
+			atomic_int_add(&sys_total_util_, task_list[i]->GetRunUtility());
 
-	for(i = 0; i < CountTasks(); i++)
-		task_list[i]->start(&attr);
+			if(verbose_)
+				*oss << "period: " << task_list[i]->period()
+				<< " usec \t usage: " << task_list[i]->unlocked_usage()
+				<< " unlocked + " << task_list[i]->locked_usage()
+				<< " locked usec" << endl;
 
-	clock_gettime(CLOCK_REALTIME, &g_start_time_);
-	g_end_time_.tv_nsec=g_start_time_.tv_nsec+run_time_us()*1000;
-	g_end_time_.tv_sec=g_start_time_.tv_sec;
-	while(g_end_time_.tv_nsec>=1000000000){
-		g_end_time_.tv_nsec-=1000000000;
-		g_end_time_.tv_sec+=1;
-	}
+			task_list[i]->start(&attr);
 
-	/* Sleep while the tasks are run and then print */
-	for(int i = 0; i < CountTasks(); i++) {
-		long tardiness;
-		pthread_join(task_list[i]->thread, NULL);
-		sys_met_release_ += task_list[i]->deadlines_met();
-		sys_met_util_ += task_list[i]->utility_accrued();
-		sys_abort_count_ += task_list[i]->jobs_aborted();
-		tardiness = task_list[i]->max_tardiness();
-		if(tardiness < max_tardiness_)
-			max_tardiness_ = tardiness;
+			clock_gettime(CLOCK_REALTIME, &g_start_time_);
+			g_end_time_.tv_nsec=g_start_time_.tv_nsec+run_time_us()*1000;
+			g_end_time_.tv_sec=g_start_time_.tv_sec;
+			while(g_end_time_.tv_nsec>=1000000000){
+				g_end_time_.tv_nsec-=1000000000;
+				g_end_time_.tv_sec+=1;
+			}
+
+			/* Sleep while the tasks are run and then print */
+			long tardiness;
+			pthread_join(task_list[i]->thread, NULL);
+			sys_met_release_ += task_list[i]->deadlines_met();
+			sys_met_util_ += task_list[i]->utility_accrued();
+			sys_abort_count_ += task_list[i]->jobs_aborted();
+			tardiness = task_list[i]->max_tardiness();
+			if(tardiness < max_tardiness_)
+				max_tardiness_ = tardiness;
+		}
 	}
 
 	/* Free resources */

@@ -142,6 +142,7 @@ int main(int argc, char **argv) {
                 {"sync",required_argument,0,0},
                 {"checkpoint",required_argument,0,0},
                 {"sh_lev",required_argument,0,0},
+                {"calibration",required_argument,0,0},
                 {"transitive",required_argument,0,0},
                 {0, 0, 0, 0}
               };
@@ -200,6 +201,14 @@ int main(int argc, char **argv) {
 					setTransitiveRetry(true);
 				}
 				//default value for "transitive" is false
+			}
+            else if(!strcmp(long_options[option_index].name,"calibration")){
+				string calibration=optarg;
+				calibration=upperStr(calibration);
+				if(!calibration.compare(upperStr("yes")) || !calibration.compare(upperStr("y"))){
+					setCalibration(true);
+				}
+				//default value for "calibration" is false
 			}
             else if(!strcmp(long_options[option_index].name,"sh_lev")){
 				sh_lev=atof(optarg);

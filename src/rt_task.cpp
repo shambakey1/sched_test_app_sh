@@ -238,7 +238,8 @@ void *Task::task(void *value) {
         (me->task_result)->at(4).push_back((unsigned long long)(subtract_ts_mo(me->period_ts(),me->deadline())));
         (me->task_result)->at(5).push_back(((unsigned long long)(me->deadline()->tv_sec))*BILLION+(me->deadline()->tv_nsec));
         (me->task_result)->at(6).push_back(((unsigned long long)(end_time.tv_sec))*BILLION+(end_time.tv_nsec));
-        (me->task_result)->at(7).push_back(((unsigned long long)(end_time.tv_sec))*BILLION+(end_time.tv_nsec)-(subtract_ts_mo(me->period_ts(), me->deadline())));
+        //(me->task_result)->at(7).push_back(((unsigned long long)(end_time.tv_sec))*BILLION+(end_time.tv_nsec)-(subtract_ts_mo(me->period_ts(), me->deadline())));
+        (me->task_result)->at(7).push_back((me->task_result)->at(6).back()-(me->task_result)->at(4).back());
         //(me->log_result)->push_back(stm::printLog());
         if(isSTM(sync_alg)){
 			me->cur_st_vec=stm::printStatistics();
