@@ -130,6 +130,9 @@ int main(int argc, char **argv) {
         string dataset_pass=DBPASS;     //password to access dataset
         string dataset=DB;          //database containing dataset
         int dataset_id; //ID of specified dataset
+        int task_id;	//Id of specified taks if needed (just as in some analysis)
+        int op_no=0;	//operation number if analyzing results
+        int u_cap=0;	//utilization cap if needed (just as in some analysis)
 
         while(1){
             static struct option long_options[] =
@@ -139,11 +142,14 @@ int main(int argc, char **argv) {
                 {"db_user",required_argument,0,0},
                 {"db_pass",required_argument,0,0},
                 {"dataset_id",required_argument,0,0},
+                {"task_id",required_argument,0,0},
                 {"sync",required_argument,0,0},
                 {"checkpoint",required_argument,0,0},
                 {"sh_lev",required_argument,0,0},
                 {"calibration",required_argument,0,0},
                 {"transitive",required_argument,0,0},
+                {"analyze",required_argument,0,0},
+                {"u_cap",required_argument,0,0},
                 {0, 0, 0, 0}
               };
             int option_index = 0;
@@ -165,8 +171,11 @@ int main(int argc, char **argv) {
             }
             else if(!strcmp(long_options[option_index].name,"dataset_id")){
                 dataset_id=atoi(optarg);
-				DATASET_ID=dataset_id;
+                DATASET_ID=dataset_id;
             }
+            else if(!strcmp(long_options[option_index].name,"task_id")){
+				task_id=atoi(optarg);
+			}
             else if(!strcmp(long_options[option_index].name,"sync")){
                 sync_alg=optarg;
                 sync_alg=upperStr(sync_alg);
@@ -212,6 +221,12 @@ int main(int argc, char **argv) {
 			}
             else if(!strcmp(long_options[option_index].name,"sh_lev")){
 				sh_lev=atof(optarg);
+			}
+            else if(!strcmp(long_options[option_index].name,"analyze")){
+				op_no=atoi(optarg);
+			}
+            else if(!strcmp(long_options[option_index].name,"u_cap")){
+				u_cap=atoi(optarg);
 			}
 
             switch (c) {
@@ -349,6 +364,12 @@ int main(int argc, char **argv) {
 	{
 		print_usage();
 		return 0;
+	}
+
+	/* If we are analyzing data */
+	if(op_no){
+		analyze_results(dataset_host,dataset,dataset_user,dataset_pass,dataset_id,task_id,sh_lev,TRANSITIVE,u_cap,op_no,STM_CHECKPOINT,sched_name);
+		exit(0);
 	}
 
 	/* FIXME: If batch mode is enabled, has the end-usage and cpu-usage given? */
