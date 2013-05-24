@@ -198,7 +198,7 @@ void *Task::task(void *value) {
 			}
 			else if(!sync_alg.compare("PNF")){
 				me->EndRtSegment();
-				(coun_obj->at(0)).multi_reset(num_loops,(void*)(&cm_args),me->vec[2][i],(me->thread_id()),me->wr_per);
+				(coun_obj->at(0)).multi_reset_advance(num_loops,(void*)(&cm_args),me->vec[2][i],(me->thread_id()),me->wr_per);
 				me->BeginRtSegment();	
 			}
 			else if(!sync_alg.compare("FBLT")){
