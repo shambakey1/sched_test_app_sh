@@ -157,7 +157,7 @@ void *Task::task(void *value) {
 
 		//me->Work(me->unlocked_usage());
         int j=me->vec[0][0].size();
-        int num_loops;
+        unsigned int num_loops;
         //Assign pnf-parameter depending on scheduler
         struct task_in_param cm_args;
         if(isSTM(sync_alg)){
