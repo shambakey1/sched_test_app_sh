@@ -327,6 +327,9 @@ int RtTester::fileSelected(string data_set_host,string data_set,string user_name
     else if(!sync_alg.compare("RNLP")){
     	totalreslock=getRNLPResLock(tasks_info);
     }
+    else if(!sync_alg.compare("PNF")){
+    	mu_init();
+    }
 
     print();
     return lcm;
@@ -814,10 +817,21 @@ int RtTester::run() {
 	}
 
 	/* Free resources */
+	if(!sync_alg.compare("PNF")){
+		/*
+		 * Stop the pn_main service
+		 */
+		cm_stop=true;
+	}
+
 	while (!lock_list.isEmpty()) {
 		chronos_mutex_t *r = lock_list.takeFirst();
 		chronos_mutex_destroy(&r);
 		delete r;
+	}
+
+	if(mu){
+		mu_destroy();
 	}
 
 out_sched:

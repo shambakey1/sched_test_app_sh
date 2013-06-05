@@ -186,7 +186,7 @@ int main(int argc, char **argv) {
                 }
                 if(isSTM(sync_alg)){
                 	// In case of stm synchronization
-                	stm::init("Polka","invis-eager",false);
+                	stm::init(sync_alg,"invis-eager",false);
                 }
                 else if(!sync_alg.compare("OMLP")){
                 	lock_pro_id=OMLP_PRO;
