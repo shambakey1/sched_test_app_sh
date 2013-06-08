@@ -199,7 +199,7 @@ void *Task::task(void *value) {
 			else if(!sync_alg.compare("PNF")){
 				me->EndRtSegment();
 				(coun_obj->at(0)).multi_reset_advance(num_loops,(void*)(&cm_args),me->vec[2][i],(me->thread_id()),me->wr_per);
-				me->BeginRtSegment();	
+				me->BeginRtSegment();
 			}
 			else if(!sync_alg.compare("FBLT")){
 				cm_args.gen_eta=me->vec[4][0][i]==0?0:(rand()%((int)(me->vec[4][0][i])))/20;
@@ -290,6 +290,10 @@ void *Task::task(void *value) {
 		} else
 			me->set_max_tardiness(sleeptime);
 	}
+    if(!sync_alg.compare("PNF")){
+    	//Decrement cm_stop to close pnf_main if cm_stop=0
+    	fad(&cm_stop);
+    }
 	pthread_exit(NULL);
 }
 
