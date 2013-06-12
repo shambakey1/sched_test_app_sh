@@ -328,7 +328,8 @@ int RtTester::fileSelected(string data_set_host,string data_set,string user_name
     	totalreslock=getRNLPResLock(tasks_info);
     }
     else if(!sync_alg.compare("PNF")){
-    	mu_init();
+    	//Start pnf_main service if PNF is used. This step must be done before calling stm::init for any task
+    	stm::pnf_main_start();
     }
 
     print();
@@ -816,22 +817,16 @@ int RtTester::run() {
 		}
 	}
 
-	/* Free resources */
 	if(!sync_alg.compare("PNF")){
-		/*
-		 * Stop the pn_main service
-		 */
-		cm_stop=true;
+		//stop pnf_main service if PNF is used
+		stm::pnf_main_stop();
 	}
 
+	/* Free resources */
 	while (!lock_list.isEmpty()) {
 		chronos_mutex_t *r = lock_list.takeFirst();
 		chronos_mutex_destroy(&r);
 		delete r;
-	}
-
-	if(mu){
-		mu_destroy();
 	}
 
 out_sched:

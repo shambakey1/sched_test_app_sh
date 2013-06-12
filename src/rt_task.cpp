@@ -290,10 +290,7 @@ void *Task::task(void *value) {
 		} else
 			me->set_max_tardiness(sleeptime);
 	}
-    if(!sync_alg.compare("PNF")){
-    	//Decrement cm_stop to close pnf_main if cm_stop=0
-    	fad(&cm_stop);
-    }
+
 	pthread_exit(NULL);
 }
 
