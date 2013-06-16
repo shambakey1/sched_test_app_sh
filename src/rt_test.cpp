@@ -329,9 +329,9 @@ int RtTester::fileSelected(string data_set_host,string data_set,string user_name
     }
     else if(!sync_alg.compare("PNF")){
     	//Start pnf_main service if PNF is used. This step must be done before calling stm::init for any task
-    	stm::pnf_main_start();
+    	//stm::pnf_main_start();
+    	mu_init();
     }
-
     print();
     return lcm;
 }
@@ -819,7 +819,8 @@ int RtTester::run() {
 
 	if(!sync_alg.compare("PNF")){
 		//stop pnf_main service if PNF is used
-		stm::pnf_main_stop();
+//		stm::pnf_main_stop();
+		mu_destroy();
 	}
 
 	/* Free resources */
