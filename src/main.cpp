@@ -133,6 +133,9 @@ int main(int argc, char **argv) {
         int task_id;	//Id of specified taks if needed (just as in some analysis)
         int op_no=0;	//operation number if analyzing results
         int u_cap=0;	//utilization cap if needed (just as in some analysis)
+        int mod_obj_sh_lev=0;	//If 1, then modify objects of all atomic sections in tasks under
+        						//specified dataset_id according to specified sh_lev. Note that objecst
+        						//under sh_lev=1 must already exist
 
         while(1){
             static struct option long_options[] =
@@ -150,6 +153,7 @@ int main(int argc, char **argv) {
                 {"transitive",required_argument,0,0},
                 {"analyze",required_argument,0,0},
                 {"u_cap",required_argument,0,0},
+                {"mod_obj_sh_lev",required_argument,0,0},
                 {0, 0, 0, 0}
               };
             int option_index = 0;
@@ -227,6 +231,15 @@ int main(int argc, char **argv) {
 			}
             else if(!strcmp(long_options[option_index].name,"u_cap")){
 				u_cap=atoi(optarg);
+			}
+            else if(!strcmp(long_options[option_index].name,"mod_obj_sh_lev")){
+            	mod_obj_sh_lev=atoi(optarg);
+            	if(mod_obj_sh_lev!=0 && mod_obj_sh_lev!=1 && mod_obj_sh_lev!=2){
+            		cout<<"Err: Wrong value for mod_obj_sh_lev. Please enter 0 for nothing, 1 to modify ";
+            		cout<<"objects according to sh_lev, or 2 to retrieve maximum number of shared objects ";
+            		cout<<"per any Tx according to sh_lev"<<endl;
+            		exit(0);
+            	}
 			}
 
             switch (c) {
@@ -370,6 +383,15 @@ int main(int argc, char **argv) {
 	if(op_no){
 		analyze_results(dataset_host,dataset,dataset_user,dataset_pass,dataset_id,task_id,sh_lev,TRANSITIVE,u_cap,op_no,STM_CHECKPOINT,sched_name);
 		exit(0);
+	}
+
+	/* If we want to change objects based on sharing level */
+	if(mod_obj_sh_lev==1){
+		modPorObjSh(dataset_host,dataset,dataset_user,dataset_pass,dataset_id,sh_lev,TRANSITIVE,0);
+		return 0;
+	}
+	else if(mod_obj_sh_lev==2){
+		return modPorObjSh(dataset_host,dataset,dataset_user,dataset_pass,dataset_id,sh_lev,TRANSITIVE,1);
 	}
 
 	/* FIXME: If batch mode is enabled, has the end-usage and cpu-usage given? */
